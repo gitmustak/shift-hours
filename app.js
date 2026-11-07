@@ -808,7 +808,7 @@ function downloadScheduleIcs() {
         `DTSTAMP:${formatIcsUtc(Date.now())}`,
         `DTSTART:${formatIcsUtc(startTimestamp)}`,
         `DTEND:${formatIcsUtc(endTimestamp)}`,
-        `SUMMARY:${escapeIcsText(`Shift ${shiftId}`)}`,
+        `SUMMARY:${escapeIcsText(`Itobuz Shift ${shiftId}`)}`,
         `DESCRIPTION:${escapeIcsText(`Local shift, converted from GMT-5 on ${selectedDate}.`)}`,
         "END:VEVENT",
       ].join("\r\n"));
