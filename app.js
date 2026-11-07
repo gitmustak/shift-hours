@@ -178,7 +178,7 @@ function createShiftRow(values = {}) {
   resetDatesButton.textContent = "Reset dates";
   resetDatesButton.addEventListener("click", () => {
     row.dataset.selectedDates = "[]";
-    row.dataset.visibleMonth = getOfficeToday().slice(0, 7);
+    row.dataset.visibleMonth = getDeviceToday().slice(0, 7);
     setTimeValue(row.querySelector('[data-role="start"]'), null);
     setTimeValue(row.querySelector('[data-role="end"]'), null);
     renderCalendar(dateCalendar, row);
@@ -186,7 +186,7 @@ function createShiftRow(values = {}) {
     renderResults();
   });
   const initialDates = values.dates ?? [];
-  row.dataset.visibleMonth = (initialDates[0] ?? getOfficeToday()).slice(0, 7);
+  row.dataset.visibleMonth = (initialDates[0] ?? getDeviceToday()).slice(0, 7);
   row.dataset.selectedDates = JSON.stringify(initialDates);
 
   const startInput = createTimeField("start", "Start time in office time zone", values.start);
@@ -520,9 +520,9 @@ function updateTimeFormat(format) {
   renderResults();
 }
 
-function getOfficeToday() {
-  const parts = getZonedParts(Date.now(), sourceTimezone);
-  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+function getDeviceToday() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function toIsoDate(date) {
@@ -541,7 +541,7 @@ function renderCalendar(calendar, row) {
   const gridStart = new Date(monthStart);
   gridStart.setUTCDate(monthStart.getUTCDate() - ((monthStart.getUTCDay() + 6) % 7));
   const selectedDates = new Set(getSelectedDates(row));
-  const today = getOfficeToday();
+  const today = getDeviceToday();
 
   const header = document.createElement("div");
   header.className = "calendar-header";
