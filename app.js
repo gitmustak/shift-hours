@@ -12,7 +12,6 @@ const monthFormatter = new Intl.DateTimeFormat("en-US", {
 });
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DEFAULT_SHIFT_LENGTH_MINUTES = 8 * 60 + 30;
-const SHIFT_LENGTH_OPTIONS = Array.from({ length: 24 }, (_, index) => (index + 1) * 30);
 
 const shiftRows = document.querySelector("#shift-rows");
 const resultRows = document.querySelector("#result-rows");
@@ -22,6 +21,7 @@ const scheduleCalendar = document.querySelector("#schedule-calendar");
 const tableViewButton = document.querySelector("#table-view-button");
 const calendarViewButton = document.querySelector("#calendar-view-button");
 const deleteSelectedShiftsButton = document.querySelector("#delete-selected-shifts");
+const exportScheduleButton = document.querySelector("#export-schedule");
 const sourceTimezone = "fixed:-300";
 const destinationTimezone = "fixed:330";
 let timeFormat = "24";
@@ -181,7 +181,6 @@ function createShiftRow(values = {}) {
     row.dataset.visibleMonth = getOfficeToday().slice(0, 7);
     setTimeValue(row.querySelector('[data-role="start"]'), null);
     setTimeValue(row.querySelector('[data-role="end"]'), null);
-    setShiftLength(DEFAULT_SHIFT_LENGTH_MINUTES);
     renderCalendar(dateCalendar, row);
     updateShiftRowSummary(row);
     renderResults();
@@ -192,101 +191,6 @@ function createShiftRow(values = {}) {
 
   const startInput = createTimeField("start", "Start time in office time zone", values.start);
   const endInput = createTimeField("end", "End time in office time zone", values.end);
-  const shiftLengthControl = document.createElement("div");
-  shiftLengthControl.className = "shift-length-control";
-  const shiftLength = document.createElement("button");
-  shiftLength.type = "button";
-  shiftLength.className = "shift-length";
-  shiftLength.setAttribute("aria-haspopup", "listbox");
-  shiftLength.setAttribute("aria-expanded", "false");
-  const shiftLengthMenu = document.createElement("div");
-  shiftLengthMenu.className = "shift-length-menu";
-  shiftLengthMenu.id = `shift-length-options-${row.dataset.shiftId}`;
-  shiftLengthMenu.setAttribute("role", "listbox");
-  shiftLengthMenu.setAttribute("aria-label", "Shift time");
-  shiftLength.setAttribute("aria-controls", shiftLengthMenu.id);
-  const shiftLengthMenuTitle = document.createElement("strong");
-  shiftLengthMenuTitle.className = "shift-length-menu-title";
-  shiftLengthMenuTitle.textContent = "Shift time";
-  shiftLengthMenu.append(shiftLengthMenuTitle);
-
-  const formatShiftLength = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return [
-      ...(hours > 0 ? [`${hours} h`] : []),
-      ...(remainingMinutes > 0 ? [`${remainingMinutes} min`] : []),
-    ].join(" ");
-  };
-  const setShiftLength = (minutes) => {
-    shiftLength.dataset.minutes = String(minutes);
-    shiftLength.setAttribute("aria-label", `Shift time: ${formatShiftLength(minutes)}`);
-    const arrow = document.createElement("span");
-    arrow.className = "shift-length-arrow";
-    arrow.setAttribute("aria-hidden", "true");
-    arrow.textContent = "▾";
-    shiftLength.replaceChildren(
-      document.createTextNode("Shift time"),
-      arrow,
-    );
-    shiftLengthMenu.querySelectorAll('[role="option"]').forEach((option) => {
-      option.setAttribute("aria-selected", String(option.dataset.minutes === String(minutes)));
-    });
-  };
-  SHIFT_LENGTH_OPTIONS.forEach((minutes) => {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.className = "shift-length-option";
-    option.dataset.minutes = String(minutes);
-    option.setAttribute("role", "option");
-    option.textContent = formatShiftLength(minutes);
-    option.addEventListener("click", () => {
-      setShiftLength(minutes);
-      shiftLength.setAttribute("aria-expanded", "false");
-      updateDefaultEndTime(row);
-      shiftLength.focus();
-    });
-    shiftLengthMenu.append(option);
-  });
-  setShiftLength(values.length ?? DEFAULT_SHIFT_LENGTH_MINUTES);
-  shiftLength.addEventListener("click", () => {
-    const isExpanded = shiftLength.getAttribute("aria-expanded") === "true";
-    shiftLength.setAttribute("aria-expanded", String(!isExpanded));
-  });
-  shiftLength.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      shiftLength.setAttribute("aria-expanded", "true");
-      const options = Array.from(shiftLengthMenu.querySelectorAll('[role="option"]'));
-      const selectedIndex = options.findIndex(
-        (option) => option.dataset.minutes === shiftLength.dataset.minutes,
-      );
-      const offset = event.key === "ArrowDown" ? 1 : -1;
-      options[(selectedIndex + offset + options.length) % options.length].focus();
-    } else if (event.key === "Escape") {
-      shiftLength.setAttribute("aria-expanded", "false");
-    }
-  });
-  shiftLengthMenu.addEventListener("keydown", (event) => {
-    const options = Array.from(shiftLengthMenu.querySelectorAll('[role="option"]'));
-    const currentIndex = options.indexOf(document.activeElement);
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const offset = event.key === "ArrowDown" ? 1 : -1;
-      options[(currentIndex + offset + options.length) % options.length].focus();
-    } else if (event.key === "Escape") {
-      shiftLength.setAttribute("aria-expanded", "false");
-      shiftLength.focus();
-    }
-  });
-  const closeShiftLengthMenu = (event) => {
-    if (!shiftLengthControl.contains(event.target)) {
-      shiftLength.setAttribute("aria-expanded", "false");
-    }
-  };
-  document.addEventListener("click", closeShiftLengthMenu);
-  shiftLengthControl.append(shiftLength, shiftLengthMenu);
-
   const actions = document.createElement("div");
   actions.className = "shift-actions";
   const scheduleButton = document.createElement("button");
@@ -300,7 +204,7 @@ function createShiftRow(values = {}) {
   calendarControls.className = "calendar-controls";
   const calendarFooter = document.createElement("div");
   calendarFooter.className = "calendar-footer";
-  calendarFooter.append(shiftLengthControl, resetDatesButton);
+  calendarFooter.append(resetDatesButton);
   calendarControls.append(dateCalendar, calendarFooter);
   dateCell.append(rowSummary);
   dateCell.append(calendarControls);
@@ -596,8 +500,7 @@ function updateDefaultEndTime(row) {
   const endField = row.querySelector('[data-role="end"]');
   const startMinutes = getTimeValue(startField);
   if (startMinutes === null || !Number.isFinite(startMinutes)) return;
-  const shiftLength = Number(row.querySelector(".shift-length").dataset.minutes);
-  setTimeValue(endField, (startMinutes + shiftLength) % (24 * 60));
+  setTimeValue(endField, (startMinutes + DEFAULT_SHIFT_LENGTH_MINUTES) % (24 * 60));
   updateShiftRowSummary(row);
 }
 
@@ -608,6 +511,7 @@ function updateTimeFormat(format) {
     end: getTimeValue(row.querySelector('[data-role="end"]')),
   }));
   timeFormat = format;
+  shiftRows.closest("table").classList.toggle("time-format-12", timeFormat === "12");
   Array.from(shiftRows.rows).forEach((row, index) => {
     setTimeValue(row.querySelector('[data-role="start"]'), values[index].start);
     setTimeValue(row.querySelector('[data-role="end"]'), values[index].end);
@@ -878,6 +782,65 @@ function updateBulkDeleteControls(entryCount) {
   deleteSelectedShiftsButton.hidden = scheduleView !== "table" || entryCount === 0;
 }
 
+function formatIcsUtc(timestamp) {
+  return new Date(timestamp).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function escapeIcsText(value) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function downloadScheduleIcs() {
+  const events = [];
+  scheduledShifts.forEach(({ dates, startMinutes, endMinutes }, shiftId) => {
+    dates.forEach((selectedDate) => {
+      const startTimestamp = wallTimeToTimestamp(selectedDate, startMinutes, sourceTimezone);
+      const endTimestamp = wallTimeToTimestamp(selectedDate, endMinutes, sourceTimezone);
+      if (startTimestamp === null || endTimestamp === null) return;
+
+      events.push([
+        "BEGIN:VEVENT",
+        `UID:shift-${shiftId}-${selectedDate}@shift-time-converter.local`,
+        `DTSTAMP:${formatIcsUtc(Date.now())}`,
+        `DTSTART:${formatIcsUtc(startTimestamp)}`,
+        `DTEND:${formatIcsUtc(endTimestamp)}`,
+        `SUMMARY:${escapeIcsText(`Shift ${shiftId}`)}`,
+        `DESCRIPTION:${escapeIcsText(`Local shift, converted from GMT-5 on ${selectedDate}.`)}`,
+        "END:VEVENT",
+      ].join("\r\n"));
+    });
+  });
+
+  if (events.length === 0) {
+    statusMessage.textContent = "Add a valid shift to your schedule before exporting.";
+    return;
+  }
+
+  const calendar = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Shift Time Converter//Local Schedule//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    ...events,
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+  const blob = new Blob([calendar], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "local-shifts.ics";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function deleteSelectedScheduleEntries() {
   Array.from(selectedScheduleEntries, (key) => JSON.parse(key)).forEach(
     ([shiftId, selectedDate]) => removeScheduledOccurrence(shiftId, selectedDate),
@@ -1010,6 +973,7 @@ function renderResults() {
   calendarViewButton.setAttribute("aria-pressed", String(scheduleView === "calendar"));
   renderScheduleCalendar(scheduledRows);
   updateBulkDeleteControls(convertedCount);
+  exportScheduleButton.disabled = convertedCount === 0;
 
   const messages = [];
   if (convertedCount === 0 && scheduledShifts.size === 0 && invalidCount === 0) {
@@ -1024,6 +988,7 @@ function renderResults() {
 }
 
 deleteSelectedShiftsButton.addEventListener("click", deleteSelectedScheduleEntries);
+exportScheduleButton.addEventListener("click", downloadScheduleIcs);
 
 tableViewButton.addEventListener("click", () => {
   scheduleView = "table";
@@ -1034,6 +999,19 @@ calendarViewButton.addEventListener("click", () => {
   renderResults();
 });
 document.querySelector("#add-shift").addEventListener("click", createShiftRow);
+const timetableCard = document.querySelector(".timetable-card");
+const timetableToggle = document.querySelector("#timetable-toggle");
+const timetableToggleIcon = timetableToggle.querySelector(".timetable-toggle-icon");
+timetableToggle.addEventListener("click", () => {
+  const isExpanded = timetableToggle.getAttribute("aria-expanded") === "true";
+  timetableToggle.setAttribute("aria-expanded", String(!isExpanded));
+  timetableToggle.setAttribute(
+    "aria-label",
+    `${isExpanded ? "Expand" : "Collapse"} timetable`,
+  );
+  timetableCard.classList.toggle("timetable-collapsed", isExpanded);
+  timetableToggleIcon.textContent = isExpanded ? "▸" : "▾";
+});
 document.querySelectorAll('input[name="time-format"]').forEach((radio) => {
   radio.addEventListener("change", () => updateTimeFormat(radio.value));
 });

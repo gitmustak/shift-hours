@@ -27,7 +27,7 @@
           </button>
           <div class="help-menu-content" id="help-menu-content" hidden>
             <ul>
-              <li>Choose a shift time beside Reset dates to set the default end time after the start time.</li>
+              <li>Setting a start time automatically sets the end time 8 hours 30 minutes later; you can also edit it directly.</li>
               <li>You can also edit the end time directly.</li>
               <li>Click dates to select or deselect them, or Shift-click another date to select the full range.</li>
               <li>Choose Add to schedule to see the converted shift.</li>
@@ -51,41 +51,55 @@
         <span class="offset-note">Your time is 10 hours 30 minutes ahead.</span>
       </section>
 
-      <section class="schedule-card" aria-labelledby="input-heading">
+      <section class="schedule-card timetable-card" aria-labelledby="input-heading">
         <div class="section-heading">
           <div>
             <p class="step-label">1. Enter your timetable</p>
             <h2 id="input-heading">Office shifts</h2>
           </div>
-          <button class="button button-secondary" id="add-shift" type="button">
-            <span aria-hidden="true">＋</span> Add shift
-          </button>
+          <div class="timetable-actions">
+            <button class="button button-secondary" id="add-shift" type="button">
+              <span aria-hidden="true">＋</span> Add shift
+            </button>
+            <button
+              class="button button-secondary timetable-toggle"
+              id="timetable-toggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="timetable-content"
+              aria-label="Collapse timetable"
+            >
+              <span class="timetable-toggle-icon" aria-hidden="true">▾</span>
+            </button>
+          </div>
         </div>
 
-        <fieldset class="time-format-control">
-          <legend>Time input format</legend>
-          <label>
-            <input type="radio" name="time-format" value="24" checked>
-            <span>24-hour</span>
-          </label>
-          <label>
-            <input type="radio" name="time-format" value="12">
-            <span>12-hour</span>
-          </label>
-        </fieldset>
+        <div id="timetable-content">
+          <fieldset class="time-format-control">
+            <legend>Time input format</legend>
+            <label>
+              <input type="radio" name="time-format" value="24" checked>
+              <span>24-hour</span>
+            </label>
+            <label>
+              <input type="radio" name="time-format" value="12">
+              <span>12-hour</span>
+            </label>
+          </fieldset>
 
-        <div class="table-scroll">
-          <table class="schedule-table">
-            <thead>
-              <tr>
-                <th scope="col">Select dates in GMT−5</th>
-                <th scope="col">Start time</th>
-                <th scope="col">End time</th>
-                <th scope="col"><span class="visually-hidden">Shift actions</span></th>
-              </tr>
-            </thead>
-            <tbody id="shift-rows"></tbody>
-          </table>
+          <div class="table-scroll">
+            <table class="schedule-table">
+              <thead>
+                <tr>
+                  <th scope="col">Select dates in GMT−5</th>
+                  <th scope="col">Start time</th>
+                  <th scope="col">End time</th>
+                  <th scope="col"><span class="visually-hidden">Shift actions</span></th>
+                </tr>
+              </thead>
+              <tbody id="shift-rows"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -96,6 +110,9 @@
             <h2 id="results-heading">Your local shifts <span class="result-zone">GMT+5:30</span></h2>
           </div>
           <div class="schedule-view-toggle" role="group" aria-label="Schedule view">
+            <button type="button" class="button button-secondary" id="export-schedule" disabled>
+              Export
+            </button>
             <button type="button" class="button button-secondary" id="delete-selected-shifts" disabled>
               Delete selected
             </button>
